@@ -1,0 +1,10 @@
+﻿Started: 2026-05-12 15:59:54
+Map type: Period
+Source  : G:\My Drive\Sfirat_Yeelim\Exports\KML\Period_Export\251101-251130.kml
+Output  : G:\My Drive\Sfirat_Yeelim\Exports\RIPOS\PartialMap_Multi\json\2025-11
+Count   : 1
+OVERWRITE: existing target will be replaced: G:\My Drive\Sfirat_Yeelim\Exports\RIPOS\PartialMap_Multi\json\2025-11\period.geojson
+OK: 251101-251130.kml -> period.geojson
+Finished: 2026-05-12 15:59:55
+Success : 1
+Failed  : 0
