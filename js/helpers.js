@@ -68,8 +68,8 @@ function createMarkerIcon(labelText) {
     className: '',
     html: `<div class="custom-marker"><img src="${MARKER_ICON_URL}" alt=""><div class="custom-marker-label">${escapeHtml(labelText || '')}</div></div>`,
     iconSize: [70, 21],
-    iconAnchor: [9, 20],
-    popupAnchor: [0, -18]
+    iconAnchor: [35, 10],
+    popupAnchor: [0, 10]
   });
 }
 function ensureLayerVisible(layerName) {
