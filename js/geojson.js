@@ -102,7 +102,7 @@ async function initMap() {
     });
 
     buildLayerList();
-    if (allBounds.length > 0) map.fitBounds(allBounds, { padding: [20, 20] });
+    fitIsraelView();
     setStatus(`נטענו ${loadedLayers} שכבות\nסה"כ ${totalMarkers} נקודות\n\n${statusLines.join('\n')}`);
   } catch (err) {
     console.error(err);

@@ -59,26 +59,6 @@ html, body { height: 100%; margin: 0; font-family: Arial, sans-serif; }
 .search-result-line { font-size: 13px; color: #333; margin-top: 2px; word-break: break-word; }
 .search-result-line:first-child { margin-top: 0; font-weight: bold; font-size: 14px; }
 
-.custom-marker {
-  display: flex;
-  align-items: center;
-  gap: 3px;
-  white-space: nowrap;
-  direction: ltr;
-}
-
-.custom-marker img {
-  width: 22px;
-  height: 32px;
-  object-fit: contain;
-  display: block;
-  flex: 0 0 auto;
-}
-.custom-marker-label {
-  font-size: 13px; font-weight: bold; color: #083c68;
-  text-shadow: -1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff, 1px 1px 0 #fff;
-  direction: ltr; line-height: 1;
-}
 
 .layer-block { border-bottom: 1px solid #eee; padding: 6px 0; }
 .layer-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
