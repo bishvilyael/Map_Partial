@@ -271,3 +271,8 @@ html, body { height: 100%; margin: 0; font-family: Arial, sans-serif; }
   font-size: 10px;
   font-weight: bold;
 }
+.leaflet-popup-content img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
