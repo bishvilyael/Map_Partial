@@ -18,10 +18,42 @@ async function loadGeoJsonLayer(filePath, layerLabel) {
     const descriptionText = stripHtml(descriptionHtml);
 
     const marker = L.marker(latlng, { icon: createMarkerIcon(name) });
-    marker.bindPopup(
-      `<div class="popup-wrap"><div class="popup-title">${escapeHtml(name)}</div><div class="popup-body">${descriptionHtml}</div></div>`,
-      { maxWidth: 340, minWidth: 220 }
-    );
+	const popupName = extractHtmlField(descriptionHtml, "שם");
+	const popupSite = extractHtmlField(descriptionHtml, "אתר") || extractHtmlField(descriptionHtml, "מקום");
+	const popupDate = formatPopupDate(extractHtmlField(descriptionHtml, "תאריך"));
+	const popupId = extractHtmlField(descriptionHtml, "ID");
+	const popupFbUrl = extractFacebookUrl(descriptionHtml);
+	const popupImage = extractImageHtml(descriptionHtml);
+
+	const popupHtml = `
+	  <div dir="rtl" style="font-family:Arial; line-height:1.5;">
+		<div><b>${escapeHtml(name)} - ${escapeHtml(popupName)}</b></div>
+
+		<div style="display:flex; justify-content:space-between; align-items:center;">
+		  <div>${escapeHtml(popupSite)}</div>
+		  <div>${escapeHtml(popupDate)}</div>
+		</div>
+
+		<div style="display:flex; justify-content:space-between; align-items:center;">
+		  <div>
+			${
+			  popupFbUrl
+				? `<a href="${escapeHtml(popupFbUrl)}" target="_blank" rel="noopener noreferrer">פוסט</a>`
+				: ""
+			}
+		  </div>
+		  <div>${popupId ? `ID: ${escapeHtml(popupId)}` : ""}</div>
+		</div>
+
+		<br/>
+		${popupImage}
+	  </div>
+	`;
+
+	marker.bindPopup(popupHtml, {
+	  maxWidth: 340,
+	  minWidth: 220
+	});
 
     layerGroup.addLayer(marker);
     allBounds.push([latlng.lat, latlng.lng]);
