@@ -48,25 +48,90 @@ async function loadGeoJsonLayer(filePath, layerLabel) {
   return { layer: layerGroup, count: markerCount, label: layerLabel, items: layerItems };
 }
 
+
 function buildLayerList() {
   layersListEl.innerHTML = '';
+
   Object.values(layerRegistry).forEach(layerInfo => {
     const block = document.createElement('div');
     block.className = 'layer-block';
-    block.innerHTML = `<div class="layer-row"><div class="layer-title">${escapeHtml(layerInfo.label)} (${layerInfo.items.length})</div><div class="layer-tools"><button data-action="toggle-layer">${map.hasLayer(layerInfo.layer) ? 'הסתר' : 'הצג'}</button><button data-action="toggle-items">יעלים</button></div></div><div class="layer-items"></div>`;
+
+    block.innerHTML = `
+      <div class="layer-row">
+        <div class="layer-title">${escapeHtml(layerInfo.label)} (${layerInfo.items.length})</div>
+        <div class="layer-tools">
+          <button data-action="toggle-layer">${map.hasLayer(layerInfo.layer) ? 'הסתר' : 'הצג'}</button>
+          <button data-action="toggle-items">יעלים</button>
+        </div>
+      </div>
+      <div class="layer-items"></div>
+    `;
 
     const itemsDiv = block.querySelector('.layer-items');
-    layerInfo.items.forEach(item => {
-      const row = document.createElement('div');
-      row.className = 'layer-item';
-      row.textContent = item.name || 'ללא שם';
-      row.addEventListener('click', () => {
-        ensureLayerVisible(layerInfo.label);
-        map.setView([item.lat, item.lon], DEFAULT_ZOOM_ON_SEARCH);
-        item.marker.openPopup();
+    let built = false;
+
+    function buildItemsLazy() {
+      if (built) return;
+      built = true;
+
+      itemsDiv.appendChild(buildLayerItemsStickyHeader());
+
+      const grouped = {};
+
+      layerInfo.items.forEach(item => {
+        const fields = getLayerItemFields(item);
+        const key = fields.number || item.name || 'unknown';
+
+        if (!grouped[key]) {
+          grouped[key] = {
+            number: fields.number,
+            displayName: fields.displayName,
+            items: []
+          };
+        }
+
+        grouped[key].items.push(item);
       });
-      itemsDiv.appendChild(row);
-    });
+
+      Object.values(grouped).forEach(group => {
+        if (group.items.length <= 1) {
+          const row = buildLayerItemRowElement(group.items[0]);
+
+          row.addEventListener('click', () => {
+            const item = group.items[0];
+            ensureLayerVisible(layerInfo.label);
+            map.setView([item.lat, item.lon], DEFAULT_ZOOM_ON_SEARCH);
+            item.marker.openPopup();
+          });
+
+          itemsDiv.appendChild(row);
+          return;
+        }
+
+        const detailsDiv = document.createElement('div');
+        detailsDiv.className = 'layer-group-details';
+
+        group.items.forEach(item => {
+          const row = buildLayerItemRowElement(item, { detail: true });
+
+          row.addEventListener('click', () => {
+            ensureLayerVisible(layerInfo.label);
+            map.setView([item.lat, item.lon], DEFAULT_ZOOM_ON_SEARCH);
+            item.marker.openPopup();
+          });
+
+          detailsDiv.appendChild(row);
+        });
+
+        const summaryRow = buildLayerGroupSummaryRowElement(group, () => {
+          detailsDiv.classList.toggle('open');
+          return detailsDiv.classList.contains('open');
+        });
+
+        itemsDiv.appendChild(summaryRow);
+        itemsDiv.appendChild(detailsDiv);
+      });
+    }
 
     block.querySelector('[data-action="toggle-layer"]').addEventListener('click', (e) => {
       if (map.hasLayer(layerInfo.layer)) {
@@ -78,7 +143,11 @@ function buildLayerList() {
       }
     });
 
-    block.querySelector('[data-action="toggle-items"]').addEventListener('click', () => itemsDiv.classList.toggle('open'));
+    block.querySelector('[data-action="toggle-items"]').addEventListener('click', () => {
+      buildItemsLazy();
+      itemsDiv.classList.toggle('open');
+    });
+
     layersListEl.appendChild(block);
   });
 }
@@ -105,6 +174,9 @@ async function initMap() {
     });
 
     buildLayerList();
+    initHeaderWorldZoomButton(map, 'worldZoomBtn');
+    setWorldZoomBounds(allBounds);
+    setWorldZoomButtonEnabled(true);
     fitIsraelView();
     setStatus(`נטענו ${loadedLayers} שכבות\nסה"כ ${totalMarkers} נקודות\n\n${statusLines.join('\n')}`);
   } catch (err) {
