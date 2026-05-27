@@ -1,4 +1,4 @@
-const FULL_MAP_URL = "https://bishvilyael.github.io/Map_Full";
+const FULL_MAP_URL = "https://bishvilyael.github.io/Map_Full_IL";
 
 let cachedGeoJsonText = null;
 let cachedGeoJsonUrl = null;
