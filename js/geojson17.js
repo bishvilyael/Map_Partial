@@ -1,3 +1,59 @@
+async function loadGeoJsonLayer(filePath, layerLabel) {
+  const response = await fetch(filePath);
+  if (!response.ok) throw new Error(`Failed to load ${filePath} (HTTP ${response.status})`);
+  const data = await response.json();
+  if (!data || !Array.isArray(data.features)) throw new Error(`Invalid GeoJSON in ${filePath}`);
+
+  const layerGroup = L.layerGroup();
+  const layerItems = [];
+  let markerCount = 0;
+
+  data.features.forEach((feature) => {
+    const latlng = getFeatureLatLng(feature);
+    if (!latlng) return;
+
+    const props = feature.properties || {};
+    const name = getFeatureName(props);
+    const rawDescriptionHtml = getFeatureDescription(props);
+    const descriptionText = stripHtml(rawDescriptionHtml);
+
+    const marker = L.marker(latlng, { icon: createMarkerIcon(name) });
+
+    marker.bindPopup(function () {
+      if (!marker._cachedPopupHtml) {
+        const descriptionHtml = normalizeDescriptionHtml(rawDescriptionHtml);
+        marker._cachedPopupHtml = buildStandardPopupHtml(name, descriptionHtml);
+      }
+      return marker._cachedPopupHtml;
+    }, {
+      maxWidth: 340,
+      minWidth: 220
+    });
+
+    layerGroup.addLayer(marker);
+    allBounds.push([latlng.lat, latlng.lng]);
+    markerCount++;
+
+    const searchText = `${name} ${descriptionText} ${layerLabel}`;
+    const itemObj = {
+      name,
+      layerLabel,
+      lat: latlng.lat,
+      lon: latlng.lng,
+      marker,
+      props,
+      rawDescriptionHtml,
+      descriptionText,
+      searchText,
+      searchTextLower: searchText.toLowerCase()
+    };
+    searchableItems.push(itemObj);
+    layerItems.push(itemObj);
+  });
+
+  return { layer: layerGroup, count: markerCount, label: layerLabel, items: layerItems };
+}
+
 function buildLayerList() {
   layersListEl.innerHTML = '';
 
@@ -85,35 +141,44 @@ function buildLayerList() {
 
 async function initMap() {
   try {
-    if (typeof initHeaderWorldZoomButton === 'function') {
-      initHeaderWorldZoomButton(map, 'worldZoomBtn');
-      setWorldZoomButtonEnabled(false);
+    const results = await Promise.allSettled(GEOJSON_FILES.map(item => loadGeoJsonLayer(item.file, item.label)));
+    let statusLines = [];
+
+    results.forEach((result, index) => {
+      const item = GEOJSON_FILES[index];
+      if (result.status === 'fulfilled') {
+        const layerInfo = result.value;
+        overlays[item.label] = layerInfo.layer;
+        layerRegistry[item.label] = layerInfo;
+        if (item.visible) layerInfo.layer.addTo(map);
+        totalMarkers += layerInfo.count;
+        loadedLayers++;
+        statusLines.push(`${item.label}: ${layerInfo.count} נקודות`);
+      } else {
+        statusLines.push(`${item.label}: שגיאה`);
+        console.error(`Layer load failed: ${item.file}`, result.reason);
+      }
+    });
+
+    buildLayerList();
+
+    if (typeof initLayersPanelGlobalToggle === 'function') {
+      initLayersPanelGlobalToggle();
     }
 
-    const statusLines = await loadIsraelFirst();
+    if (typeof initHeaderWorldZoomButton === 'function') {
+      initHeaderWorldZoomButton(map, 'worldZoomBtn');
+      setWorldZoomBounds(allBounds);
+      setWorldZoomButtonEnabled(true);
+    }
 
-    // לא מחכים ל-rest. המפה כבר מוצגת עם נקודות ישראל.
-    setTimeout(() => {
-      loadRestInBackground(statusLines).catch(err => {
-        console.error(err);
-        setStatus('שגיאה בטעינת הנקודות ברקע: ' + err.message);
-      });
-    }, 0);
+    layersPanel.classList.add('open');
+
+    fitIsraelView();
+    setStatus(`נטענו ${loadedLayers} שכבות\nסה"כ ${totalMarkers} נקודות\n\n${statusLines.join('\n')}`);
   } catch (err) {
     console.error(err);
     setStatus('שגיאה כללית בטעינת השכבות');
     alert('שגיאה בטעינת השכבות: ' + err.message);
   }
-}
-function createExpandToggle(isOpen = false) {
-  const btn = document.createElement('button');
-  btn.className = 'tree-toggle-btn';
-  btn.textContent = isOpen ? '▼' : '▶';
-
-  btn.addEventListener('click', () => {
-    const open = btn.textContent === '▼';
-    btn.textContent = open ? '▶' : '▼';
-  });
-
-  return btn;
 }
