@@ -142,7 +142,7 @@ function buildLayerList() {
   });
 
   if (typeof initLayersPanelMasterToggle === 'function') {
-    initLayersPanelMasterToggle('partial-list');
+    initLayersPanelMasterToggle('groups');
   }
 }
 
