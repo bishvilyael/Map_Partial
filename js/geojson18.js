@@ -36,7 +36,6 @@ function buildLayerList() {
         : { number: item.name || '', displayName: '' };
 
       const key = fields.number || item.name || `__item_${groups.size}`;
-
       if (!groups.has(key)) {
         groups.set(key, {
           number: fields.number || item.name || '',
@@ -82,27 +81,39 @@ function buildLayerList() {
 
     layersListEl.appendChild(block);
   });
-
-  if (typeof initLayersPanelMasterToggle === 'function') {
-    initLayersPanelMasterToggle('groups');
-  }
 }
 
 async function initMap() {
   try {
-    const results = await Promise.allSettled(GEOJSON_FILES.map(item => loadGeoJsonLayer(item.file, item.label)));
-    let statusLines = [];
-    results.forEach((result, index) => {
-      const item = GEOJSON_FILES[index];
-      if (result.status === 'fulfilled') {
-        const layerInfo = result.value; overlays[item.label] = layerInfo.layer; layerRegistry[item.label] = layerInfo;
-        if (item.visible) layerInfo.layer.addTo(map); totalMarkers += layerInfo.count; loadedLayers++; statusLines.push(`${item.label}: ${layerInfo.count} נקודות`);
-      } else { statusLines.push(`${item.label}: שגיאה`); console.error(`Layer load failed: ${item.file}`, result.reason); }
-    });
-    buildLayerList(); 
-	fitIsraelView();
-    setStatus(`נטענו ${loadedLayers} שכבות\nסה"כ ${totalMarkers} נקודות\n\n${statusLines.join('\n')}`);
+    if (typeof initHeaderWorldZoomButton === 'function') {
+      initHeaderWorldZoomButton(map, 'worldZoomBtn');
+      setWorldZoomButtonEnabled(false);
+    }
+
+    const statusLines = await loadIsraelFirst();
+
+    // לא מחכים ל-rest. המפה כבר מוצגת עם נקודות ישראל.
+    setTimeout(() => {
+      loadRestInBackground(statusLines).catch(err => {
+        console.error(err);
+        setStatus('שגיאה בטעינת הנקודות ברקע: ' + err.message);
+      });
+    }, 0);
   } catch (err) {
-    console.error(err); setStatus('שגיאה כללית בטעינת השכבות'); alert('שגיאה בטעינת השכבות: ' + err.message);
+    console.error(err);
+    setStatus('שגיאה כללית בטעינת השכבות');
+    alert('שגיאה בטעינת השכבות: ' + err.message);
   }
+}
+function createExpandToggle(isOpen = false) {
+  const btn = document.createElement('button');
+  btn.className = 'tree-toggle-btn';
+  btn.textContent = isOpen ? '▼' : '▶';
+
+  btn.addEventListener('click', () => {
+    const open = btn.textContent === '▼';
+    btn.textContent = open ? '▶' : '▼';
+  });
+
+  return btn;
 }
