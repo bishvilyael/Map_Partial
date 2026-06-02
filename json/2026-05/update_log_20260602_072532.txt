@@ -1,0 +1,11 @@
+﻿Started: 2026-06-02 07:25:32
+Map type: Period
+Source  : D:\LocalG\Sfirat_Yeelim\Exports\KML\Period_Export\260502-260530.kml
+Output  : D:\LocalG\Sfirat_Yeelim\Exports\RIPOS\Map_Partial\json\2026-05
+Count   : 1
+Split full Israel/rest: False
+OVERWRITE: existing target will be replaced: D:\LocalG\Sfirat_Yeelim\Exports\RIPOS\Map_Partial\json\2026-05\period.geojson
+OK: 260502-260530.kml -> period.geojson
+Finished: 2026-06-02 07:25:33
+Success : 1
+Failed  : 0
